@@ -54,6 +54,11 @@ minSdk = "24"
 compileSdk = "34"
 targetSdk = "34"
 
+# ---------- Sample ----------
+coreKtx = "1.13.1"
+activity = "1.9.0"
+# ----------------------------
+
 [libraries]
 acra-core = { module = "ch.acra:acra-core", version.ref = "acraCore" }
 android-segmented = { module = "info.hoang8f:android-segmented", version.ref = "androidSegmented" }
@@ -108,6 +113,11 @@ rxjava = { module = "io.reactivex.rxjava2:rxjava", version.ref = "rxjava" }
 rxjava2-rxandroid = { module = "io.reactivex.rxjava2:rxandroid", version.ref = "rxandroid" }
 sqlbrite = { module = "com.squareup.sqlbrite3:sqlbrite", version.ref = "sqlbrite" }
 transitionseverywhere = { module = "com.andkulikov:transitionseverywhere", version.ref = "transitionseverywhere" }
+
+# ---------- Sample ----------
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
+# ----------------------------
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

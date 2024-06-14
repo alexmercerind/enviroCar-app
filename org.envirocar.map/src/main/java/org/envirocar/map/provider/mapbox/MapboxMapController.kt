@@ -41,8 +41,8 @@ import org.envirocar.map.model.Polyline
  * [Mapbox](https://www.mapbox.com) based implementation for [MapController].
  */
 internal class MapboxMapController(private val viewInstance: MapView) : MapController() {
-    private val markers = mutableMapOf<Int, PointAnnotation>()
-    private val polylines = mutableSetOf<Int>()
+    private val markers = mutableMapOf<Long, PointAnnotation>()
+    private val polylines = mutableSetOf<Long>()
 
     // https://docs.mapbox.com/android/maps/guides/annotations/annotations/
     // https://docs.mapbox.com/android/maps/examples/line-gradient/
@@ -161,14 +161,14 @@ internal class MapboxMapController(private val viewInstance: MapView) : MapContr
             error("Marker with ID ${marker.id} already exists.")
         }
         var options = PointAnnotationOptions()
-        marker.point.also {
+        marker.point.let {
             options = options.withPoint(it.toMapboxPoint())
         }
-        marker.title?.also {
+        marker.title?.let {
             options = options.withTextField(it)
         }
         // Mapbox does not include a default marker icon.
-        (marker.drawable ?: R.drawable.marker_icon_default).also {
+        (marker.drawable ?: R.drawable.marker_icon_default).let {
             options = options.withIconImage(
                 AppCompatResources.getDrawable(viewInstance.context, it)!!.toBitmap()
             )
@@ -198,7 +198,7 @@ internal class MapboxMapController(private val viewInstance: MapView) : MapContr
                 lineColor(polyline.color)
                 lineBorderWidth(polyline.borderWidth.toDouble())
                 lineBorderColor(polyline.borderColor)
-                polyline.colors?.also {
+                polyline.colors?.let {
                     lineGradient(
                         interpolate {
                             linear()
@@ -231,6 +231,19 @@ internal class MapboxMapController(private val viewInstance: MapView) : MapContr
         polylines.remove(polyline.id)
         viewInstance.mapboxMap.style?.removeStyleSource(MAPBOX_POLYLINE_SOURCE_ID + polyline.id)
         viewInstance.mapboxMap.style?.removeStyleLayer(MAPBOX_POLYLINE_LAYER_ID + polyline.id)
+    }
+
+    override fun clearMarkers() {
+        markers.values.forEach { pointAnnotationManager.delete(it) }
+        markers.clear()
+    }
+
+    override fun clearPolylines() {
+        polylines.forEach {
+            viewInstance.mapboxMap.style?.removeStyleSource(MAPBOX_POLYLINE_SOURCE_ID + it)
+            viewInstance.mapboxMap.style?.removeStyleLayer(MAPBOX_POLYLINE_LAYER_ID + it)
+        }
+        polylines.clear()
     }
 
     private fun Point.toMapboxPoint() = com.mapbox.geojson.Point.fromLngLat(longitude, latitude)

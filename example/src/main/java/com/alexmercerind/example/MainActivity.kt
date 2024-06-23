@@ -13,6 +13,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.envirocar.map.MapView
 import org.envirocar.map.camera.CameraUpdateFactory
+import org.envirocar.map.location.LocationIndicator
+import org.envirocar.map.location.LocationIndicatorCameraMode
 import org.envirocar.map.model.Animation
 import org.envirocar.map.model.Marker
 import org.envirocar.map.model.Point
@@ -20,30 +22,32 @@ import org.envirocar.map.model.Polyline
 import org.envirocar.map.provider.mapbox.MapboxMapProvider
 
 class MainActivity : AppCompatActivity() {
-    private val points0 = listOf(
-        Point(52.516402, 13.379509),
-        Point(52.516267, 13.379536),
-        Point(52.516848, 13.388827),
-        Point(52.527168, 13.387228),
-        Point(52.531264, 13.382194),
-        Point(52.532053, 13.384354),
-        Point(52.533383, 13.387578),
-        Point(52.535116, 13.389691)
-    )
-    private val points1 = listOf(
-        Point(52.516402, 13.379509),
-        Point(52.516267, 13.379536),
-        Point(52.517587, 13.398930),
-        Point(52.518882, 13.402690),
-        Point(52.519918, 13.404811),
-        Point(52.517375, 13.408312),
-        Point(52.518108, 13.409911),
-        Point(52.518772, 13.411246),
-        Point(52.515834, 13.412325),
-        Point(52.515468, 13.417996),
-        Point(52.510193, 13.430113),
-        Point(52.508457, 13.434632),
-        Point(52.504617, 13.441002)
+    private val points = listOf(
+        listOf(
+            Point(52.516402, 13.379509),
+            Point(52.516267, 13.379536),
+            Point(52.516848, 13.388827),
+            Point(52.527168, 13.387228),
+            Point(52.531264, 13.382194),
+            Point(52.532053, 13.384354),
+            Point(52.533383, 13.387578),
+            Point(52.535116, 13.389691)
+        ),
+        listOf(
+            Point(52.516402, 13.379509),
+            Point(52.516267, 13.379536),
+            Point(52.517587, 13.398930),
+            Point(52.518882, 13.402690),
+            Point(52.519918, 13.404811),
+            Point(52.517375, 13.408312),
+            Point(52.518108, 13.409911),
+            Point(52.518772, 13.411246),
+            Point(52.515834, 13.412325),
+            Point(52.515468, 13.417996),
+            Point(52.510193, 13.430113),
+            Point(52.508457, 13.434632),
+            Point(52.504617, 13.441002)
+        )
     )
     private val colors = listOf(
         0xFF9400D3.toInt(),
@@ -56,6 +60,17 @@ class MainActivity : AppCompatActivity() {
     )
 
     private var anim: Animation? = null
+    private var location: LocationIndicator? = null
+
+    override fun onPause() {
+        super.onPause()
+        location?.disable()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        location?.enable()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,9 +79,13 @@ class MainActivity : AppCompatActivity() {
 
         val view = findViewById<MapView>(R.id.mapView)
         val controller = view.getController(MapboxMapProvider())
+        location = LocationIndicator(controller, this, lifecycleScope).apply {
+            setCameraMode(LocationIndicatorCameraMode.Follow())
+        }
+
         val toolbar = findViewById<MaterialToolbar>(R.id.materialToolbar)
 
-        points0.run {
+        points.first().run {
             controller.addPolyline(
                 Polyline.Builder(this)
                     .withWidth(6.0F)
@@ -78,7 +97,7 @@ class MainActivity : AppCompatActivity() {
             controller.addMarker(Marker.Builder(first()).build())
             controller.addMarker(Marker.Builder(last()).build())
         }
-        points1.run {
+        points.last().run {
             controller.addPolyline(
                 Polyline.Builder(this)
                     .withWidth(6.0F)
@@ -93,7 +112,7 @@ class MainActivity : AppCompatActivity() {
 
         controller.notifyCameraUpdate(
             CameraUpdateFactory.newCameraUpdateBasedOnBounds(
-                points0 + points1,
+                points.flatten(),
                 120.0F
             )
         )
@@ -110,12 +129,14 @@ class MainActivity : AppCompatActivity() {
                         menu.findItem(R.id.disableAnimations).isVisible = true
                         true
                     }
+
                     R.id.disableAnimations -> {
                         anim = null
                         menu.findItem(R.id.enableAnimations).isVisible = true
                         menu.findItem(R.id.disableAnimations).isVisible = false
                         true
                     }
+
                     R.id.updateCameraPoint -> {
                         MaterialAlertDialogBuilder(context).setTitle(R.string.update_camera_point)
                             .setItems(
@@ -155,16 +176,18 @@ class MainActivity : AppCompatActivity() {
                             .show()
                         true
                     }
+
                     R.id.updateCameraBounds -> {
                         controller.notifyCameraUpdate(
                             CameraUpdateFactory.newCameraUpdateBasedOnBounds(
-                                points0 + points1,
+                                points.flatten(),
                                 120.0F
                             ),
                             anim
                         )
                         true
                     }
+
                     R.id.updateCameraBearing -> {
                         val range = 0..360 step 10
                         MaterialAlertDialogBuilder(context).setTitle(R.string.update_camera_bearing)
@@ -185,6 +208,7 @@ class MainActivity : AppCompatActivity() {
                             .show()
                         true
                     }
+
                     R.id.updateCameraTilt -> {
                         val range = 0..60 step 10
                         MaterialAlertDialogBuilder(context).setTitle(R.string.update_camera_tilt)
@@ -205,6 +229,7 @@ class MainActivity : AppCompatActivity() {
                             .show()
                         true
                     }
+
                     R.id.updateCameraZoom -> {
                         val range = 0..22 step 1
                         MaterialAlertDialogBuilder(context).setTitle(R.string.update_camera_zoom)
@@ -225,6 +250,7 @@ class MainActivity : AppCompatActivity() {
                             .show()
                         true
                     }
+
                     else -> false
                 }
             }
